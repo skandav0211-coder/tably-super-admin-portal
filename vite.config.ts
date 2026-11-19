@@ -19,10 +19,11 @@ function normalizeApiBase(value: string | undefined) {
 
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
-  const apiBase = normalizeApiBase(env.VITE_API_BASE);
-  if (command === 'build' && mode === 'production' && !apiBase) {
-    throw new Error('VITE_API_BASE is required for production builds. Set it to your HTTPS backend origin in Vercel project settings.');
+  const configuredApiBase = normalizeApiBase(env.VITE_API_BASE);
+  if (command === 'build' && mode === 'production' && configuredApiBase) {
+    throw new Error('VITE_API_BASE must be empty or unset for production. Vercel proxies /admin-api to the backend so session cookies remain same-origin.');
   }
+  const apiBase = command === 'build' && mode === 'production' ? '' : configuredApiBase;
 
   return {
     plugins: [react()],

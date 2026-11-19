@@ -8,11 +8,11 @@ Standalone React + TypeScript web application for Super Admin account management
 npm ci
 ```
 
-Set `VITE_API_BASE` to an HTTPS backend origin in `.env.local` before running the portal. The same API URL is used in development and production; there is no localhost API fallback or proxy.
+For local development, set `VITE_API_BASE` to the backend's full HTTPS origin in `.env.local`. Production uses same-origin requests through the Vercel `/admin-api` rewrite, so leave `VITE_API_BASE` empty or unset in production.
 
 ```dotenv
 # .env.local
-VITE_API_BASE=https://your-backend.example.com
+VITE_API_BASE=https://tably-backend-production.up.railway.app
 ```
 
 ```sh
@@ -23,19 +23,19 @@ npm run dev
 
 ```sh
 npm ci
-VITE_API_BASE=https://your-backend.example.com npm run build
+npm run build
 ```
 
-Production builds require `VITE_API_BASE`. It must be an HTTPS origin with no path, query, fragment, or credentials. A trailing slash is normalized away.
+The production build intentionally permits `VITE_API_BASE` to be empty or unset. If a non-empty value is supplied to a production build, it fails with a message because production API calls must use the same-origin Vercel proxy. For local development, a configured base must be an HTTPS origin with no path, query, fragment, or credentials; a trailing slash is normalized away.
 
 ### Deploy to Vercel
 
 1. Import the standalone Super Admin portal repository into Vercel.
 2. Set **Framework Preset** to **Vite**, **Root Directory** to the repository root, **Install Command** to `npm ci`, **Build Command** to `npm run build`, and **Output Directory** to `dist`.
-3. Add `VITE_API_BASE` under **Project Settings → Environment Variables** for Production (and Preview if previews should work). Set it to the backend's public HTTPS origin, without a trailing slash.
-4. Redeploy after setting or changing the variable. In the backend, add the portal's exact production origin to `ADMIN_PORTAL_ORIGINS`.
-5. Use sibling HTTPS subdomains on the same site for browser cookie compatibility.
+3. Remove `VITE_API_BASE` from the Vercel **Production** and **Preview** environment variables (or leave it unset). Do not set it to the backend URL for production builds.
+4. Redeploy. Production requests go to the portal's own origin at `/admin-api/...`; `vercel.json` proxies them to `https://tably-backend-production.up.railway.app/admin-api/...` before the SPA fallback. The browser therefore receives and sends the session cookie on the portal origin.
+5. Keep `credentials: 'include'` enabled for API fetches.
 
 `vercel.json` configures the SPA fallback and security headers. API requests have a 60-second timeout and retry once on network failures and HTTP 502, 503, or 504. The portal displays “Server is waking up…” if the backend remains unavailable. A 401 returns the user to the login screen.
 
-Admin sessions use an HttpOnly, SameSite=Strict cookie. The portal does not put tokens in URLs or application logs. Serve the portal and API over HTTPS in production.
+Admin sessions use an HttpOnly, SameSite=Strict cookie. The portal does not put tokens in URLs or application logs. Serve the portal over HTTPS in production.

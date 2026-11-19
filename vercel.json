@@ -2,6 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
+      "source": "/admin-api/:path*",
+      "destination": "https://tably-backend-production.up.railway.app/admin-api/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
