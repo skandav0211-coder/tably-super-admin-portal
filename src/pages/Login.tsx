@@ -6,9 +6,9 @@ import logo from '../assets/logo-full.png';
 type Me = { id: string; email: string };
 type Challenge = { challenge: string; email: string; expiresInSec: number; resendAfterSec: number };
 
-export default function Login({ onDone }: { onDone: (m: Me) => void }) {
+export default function Login({ onDone, initialError = '' }: { onDone: (m: Me) => void; initialError?: string }) {
   const [step, setStep] = useState<'password' | 'code'>('password'); const [ch, setCh] = useState<Challenge | null>(null);
-  const [err, setErr] = useState(''); const [info, setInfo] = useState(''); const [busy, setBusy] = useState(false); const [wait, setWait] = useState(0);
+  const [err, setErr] = useState(initialError); const [info, setInfo] = useState(''); const [busy, setBusy] = useState(false); const [wait, setWait] = useState(0);
   const [digits, setDigits] = useState<string[]>(Array(6).fill('')); const refs = useRef<(HTMLInputElement | null)[]>([]);
   useEffect(() => { if (wait <= 0) return; const t = setTimeout(() => setWait(wait - 1), 1000); return () => clearTimeout(t); }, [wait]);
   useEffect(() => { if (step === 'code') refs.current[0]?.focus(); }, [step]);

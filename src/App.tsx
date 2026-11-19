@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { BadgeCheck, LayoutDashboard, LifeBuoy, LogOut, Menu, Rocket, ScrollText, Settings as Cog, Smartphone, Users, X } from 'lucide-react';
-import { api, setUnauthorizedHandler } from './api';
+import { ApiError, api, setUnauthorizedHandler } from './api';
 import mark from './assets/mark.png';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -31,16 +31,16 @@ function useResponsiveTables() {
 }
 
 export default function App() {
-  const [me, setMe] = useState<Me | null | undefined>(undefined); const [pending, setPending] = useState(0); const [open, setOpen] = useState(false); const loc = useLocation();
+  const [me, setMe] = useState<Me | null | undefined>(undefined); const [bootstrapError, setBootstrapError] = useState(''); const [pending, setPending] = useState(0); const [open, setOpen] = useState(false); const loc = useLocation();
   useResponsiveTables();
-  useEffect(() => { setUnauthorizedHandler(() => setMe(null)); api<Me>('GET', '/me').then(setMe).catch(() => setMe(null)); }, []);
+  useEffect(() => { setUnauthorizedHandler(() => setMe(null)); api<Me>('GET', '/me').then(setMe).catch((error: Error) => { if (!(error instanceof ApiError) || error.status !== 401) setBootstrapError(error.message); setMe(null); }); }, []);
   useEffect(() => setOpen(false), [loc.pathname]);
   const refreshPending = useCallback(() => { api<any[]>('GET', '/approvals').then(r => setPending(r.length)).catch(() => {}); }, []);
   useEffect(() => { if (me) { refreshPending(); const t = setInterval(refreshPending, 30000); return () => clearInterval(t); } }, [me, refreshPending]);
   const signOut = async () => { await api('POST', '/logout').catch(() => {}); setMe(null); };
 
   if (me === undefined) return <div className="login" style={{ placeItems: 'center', display: 'grid' }}><div className="mut">Loading…</div></div>;
-  if (!me) return <Login onDone={setMe} />;
+  if (!me) return <Login onDone={setMe} initialError={bootstrapError} />;
   const title = NAV.find(([to]) => (to === '/' ? loc.pathname === '/' : loc.pathname.startsWith(to)))?.[1] || (loc.pathname.startsWith('/customers') ? 'Customer' : '');
   const links = (cls = '') => NAV.map(([to, label, Icon]) => (
     <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => 'navl ' + cls + (isActive ? ' active' : '')}><Icon size={19} /> {label}{to === '/approvals' && pending > 0 && <span className="badge-n">{pending}</span>}</NavLink>));
